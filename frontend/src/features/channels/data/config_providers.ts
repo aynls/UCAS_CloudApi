@@ -87,6 +87,12 @@ export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
     color: 'bg-black-100 text-black-800 border-black-200',
     channelTypes: ['moonshot_anthropic', 'moonshot', 'moonshot_coding'],
   },
+  stepfun: {
+    provider: 'stepfun',
+    icon: OpenAI,
+    color: 'bg-violet-100 text-violet-800 border-violet-200',
+    channelTypes: ['stepfun'],
+  },
   zhipu: {
     provider: 'zhipu',
     icon: Zhipu,

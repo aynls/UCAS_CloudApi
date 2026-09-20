@@ -1309,6 +1309,7 @@ enum ChannelType @goModel(model: "github.com/looplj/axonhub/internal/ent/channel
   bailian
   bailian_anthropic
   moonshot_coding
+  stepfun
   jina
   github
   github_copilot
