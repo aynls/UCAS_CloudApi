@@ -34,4 +34,33 @@
 
 ## Result
 
-Pending deployment. No application source changes were made for this release.
+Deployment completed. No application source changes were made for this release.
+
+- New container started at `2026-09-20T12:34:56.38715742Z` (20:34:56 China time), restart count 0.
+- Image: `ucas-cloudapi:7a4252c5-stepfun`.
+- Image ID: `sha256:14b124fe5e9dd2e2d2d3974c881ee107c80ee10ea8894125eaad5c949da8a261`.
+- Runtime version: `v1.0.0-beta5-ucas.15+stepfun.7a4252c5`.
+- Uploaded archive: 40,263,917 bytes; SHA-256 `8b614de77f0f4d840cee67b80fa3ef55b0e338fe0a0f27257c80426befb74115`.
+- The new image ran an isolated `build-info` check with no network, no volumes and a read-only root before cutover.
+- Internal and public health report the exact target revision.
+- Public root HTML and three directly referenced assets return 200; six StepFun-containing JS bundles match the local build hashes.
+- Forgot-password SPA fallback works. Anonymous models, provider quotas and campus resources return 401.
+- Post-cutover and post-cleanup database checks passed: `quick_check=ok`, zero foreign-key errors, core row counts preserved, privacy flags unchanged.
+- All protected service/configuration/container fingerprints match the pre-cutover baseline. Fresh HPC SSH using its configured key succeeds. The HCZ endpoint answered SSH, but the default local key did not authenticate; no HCZ host changes were made.
+- New container logs contain no detected panic, fatal or migration failure.
+- No StepFun upstream credentials were entered and no real StepFun inference was sent. Live authenticated member UI/probe checks were not performed; relevant local regression tests passed.
+
+## Storage and rollback material
+
+- Remote release directory: `/opt/axonhub/releases/20260920T123123Z-7a4252c5-stepfun`.
+- The uploaded image archive was removed only after loading and successful verification; the finished archive remains on the Mac.
+- Raw database and consistent SQLite snapshot were compressed at low CPU priority; each decompressed SHA-256 was checked before removing its uncompressed duplicate.
+- Consistent snapshot: `axonhub.predeploy.sqlite.gz`, 109,026,642 bytes. Decompressed SHA-256: `02908ecd2241ff3ea3c401259371a913c55d24cb60c8940183d80d2084f3384b`.
+- Original raw database: `raw-db/axonhub.db.gz`, 109,026,635 bytes. Decompressed SHA-256: `1a3262fe934d98258a5501e1cc2994bd968746491753426f7b78363a21f9175c`.
+- AxonHub stopped gracefully and no WAL/SHM files remained to copy at snapshot time.
+- `compressed-backups.json` records both compressed and original checksums. The release helper can expand and verify a compressed snapshot when its rollback path needs it; the original cutover helper is retained separately.
+- Previous image and Compose override remain available. Restoring the predeployment database later would discard subsequent writes and must not be done casually.
+- Release footprint after cleanup: approximately 209 MiB, down from 819 MiB. Root disk now has approximately 5.2 GiB free (91% used).
+- No Docker prune, unrelated image/cache deletion, live database deletion or server-side build was performed.
+
+Application tag: `save-2026-09-20-stepfun-deployed` points to the deployed application revision. Release record commits are on local branch `codex/deploy-stepfun-20260920`.
