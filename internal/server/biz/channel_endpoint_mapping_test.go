@@ -91,6 +91,11 @@ func TestDefaultEndpointsForChannelType_UseLLMAPIFormatValues(t *testing.T) {
 			expected: []string{llm.APIFormatOpenAIResponse.String()},
 		},
 		{
+			name:     "stepfun step plan exposes chat completions only",
+			typ:      channel.TypeStepfun,
+			expected: []string{llm.APIFormatOpenAIChatCompletion.String()},
+		},
+		{
 			name: "codex exposes responses plus image generation and edit",
 			typ:  channel.TypeCodex,
 			expected: []string{

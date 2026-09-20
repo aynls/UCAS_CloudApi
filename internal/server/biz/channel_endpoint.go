@@ -376,6 +376,7 @@ var defaultEndpointsForChannelType = map[channel.Type][]objects.ChannelEndpoint{
 	channel.TypeBailian:             {{APIFormat: llm.APIFormatOpenAIChatCompletion.String()}},
 	channel.TypeBailianAnthropic:    {{APIFormat: llm.APIFormatAnthropicMessage.String()}},
 	channel.TypeMoonshotCoding:      {{APIFormat: llm.APIFormatAnthropicMessage.String()}},
+	channel.TypeStepfun:             {{APIFormat: llm.APIFormatOpenAIChatCompletion.String()}},
 	channel.TypeJina: {
 		{APIFormat: llm.APIFormatJinaRerank.String()},
 		{APIFormat: llm.APIFormatJinaEmbedding.String()},

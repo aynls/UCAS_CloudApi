@@ -99,6 +99,7 @@ export const channelTypeSchema = z.enum([
   'bailian',
   'bailian_anthropic',
   'moonshot_coding',
+  'stepfun',
   'jina',
   'github',
   'github_copilot',
