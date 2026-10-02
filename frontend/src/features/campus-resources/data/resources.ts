@@ -4,6 +4,10 @@ import { useSelectedProjectId } from '@/stores/projectStore';
 import { apiRequest } from '@/lib/api-client';
 
 export const campusModelDetailSchema = z.object({
+  testTargets: z
+    .array(z.object({ channelID: z.string(), modelID: z.string() }))
+    .optional()
+    .default([]),
   id: z.string(),
   source: z.string(),
   vision: z.boolean(),
@@ -24,6 +28,7 @@ const campusResourceApiKeySchema = z.object({
 const campusChannelRouteHealthSchema = z.object({
   credentialSlot: z.number().int().positive(),
   model: z.string(),
+  requestModels: z.array(z.string()).optional().default([]),
   protocol: z.string(),
   known: z.boolean(),
   available: z.boolean(),
@@ -141,7 +146,22 @@ const campusChannelProbeResultSchema = z.object({
   errorCategory: z.string().optional(),
 });
 
+const campusModelActivitySchema = z.object({
+  windowStart: z.string(),
+  windowEnd: z.string(),
+  bucketHours: z.number().positive(),
+  models: z.record(
+    z.string(),
+    z.object({
+      successCount: z.number().int().nonnegative(),
+      buckets: z.array(z.number().int().nonnegative()),
+    })
+  ),
+});
+export type CampusModelActivity = z.infer<typeof campusModelActivitySchema>;
+
 export const campusResourcesSchema = z.object({
+  modelActivity: campusModelActivitySchema.optional(),
   models: z.array(z.string()),
   modelDetails: z.array(campusModelDetailSchema).optional().default([]),
   apiKeys: z.array(campusResourceApiKeySchema),

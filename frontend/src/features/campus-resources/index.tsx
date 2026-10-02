@@ -4,30 +4,25 @@ import {
   BookOpenCheck,
   BatteryMedium,
   CalendarDays,
-  Check,
   ChevronDown,
   ChevronUp,
   CircleCheckBig,
   CircleHelp,
   CircleX,
-  Copy,
   Gauge,
   HeartHandshake,
   KeyRound,
-  Layers3,
   Loader2,
   Play,
   RadioTower,
   Search,
   Settings2,
-  ShieldCheck,
   UserRound,
   WalletCards,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -41,12 +36,12 @@ import { Switch } from '@/components/ui/switch';
 import { Header } from '@/components/layout/header';
 import { Main } from '@/components/layout/main';
 import { getProviderQuotaUsagePercentage, type ProviderQuotaChannel, useProviderQuotaStatuses } from '@/features/system/data/quotas';
+import { ModelList } from './components/model-list';
 import {
   type CampusManagedChannel,
   type CampusChannelRouteHealth,
   type CampusChannelProbeResult,
   type CampusDonationBenefits,
-  type CampusModelDetail,
   type CampusResourceChannel,
   type CampusUsageOverview,
   useCampusResources,
@@ -60,93 +55,6 @@ const AUTO_PROBE_MODEL = '__auto_probe_model__';
 const MAX_CAPABILITY_TOKENS = 10_000_000;
 const DEFAULT_DAILY_EFFECTIVE_TOKEN_LIMIT = 16_000_000;
 const DEFAULT_WEEKLY_EFFECTIVE_TOKEN_LIMIT = 64_000_000;
-
-function ModelCapabilityBadge({ label, enabled }: { label: string; enabled: boolean }) {
-  const { t } = useTranslation();
-
-  return (
-    <Badge
-      variant='outline'
-      className={cn(
-        'font-normal',
-        enabled
-          ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-          : 'text-muted-foreground border-border bg-muted/40'
-      )}
-    >
-      {label}: {t(enabled ? 'resources.models.capability.supported' : 'resources.models.capability.unsupported')}
-    </Badge>
-  );
-}
-
-function ModelCard({ model, details }: { model: string; details?: CampusModelDetail }) {
-  const { t, i18n } = useTranslation();
-  const { isCopied, handleCopy } = useCopyToClipboard({ text: model });
-  const numberFormatter = useMemo(() => new Intl.NumberFormat(i18n.language.startsWith('zh') ? 'zh-CN' : 'en-US'), [i18n.language]);
-
-  return (
-    <div className='bg-background flex min-w-0 flex-col gap-3 rounded-lg border p-3'>
-      <button
-        type='button'
-        className='group hover:text-primary focus-visible:ring-ring/50 flex min-w-0 items-center justify-between gap-3 rounded-sm text-left transition-colors focus-visible:ring-[3px] focus-visible:outline-none'
-        onClick={handleCopy}
-        aria-label={t('resources.models.copy', { model })}
-        title={t('resources.models.copy', { model })}
-        data-testid='campus-resource-model-copy'
-        data-model-name={model}
-      >
-        <code className='min-w-0 truncate text-xs font-medium sm:text-sm'>{model}</code>
-        {isCopied ? (
-          <Check className='size-4 shrink-0 text-emerald-600' aria-hidden='true' />
-        ) : (
-          <Copy className='text-muted-foreground group-hover:text-foreground size-4 shrink-0 transition-colors' aria-hidden='true' />
-        )}
-      </button>
-
-      {details && (
-        <div className='flex flex-wrap gap-1.5 text-[11px]'>
-          <Badge variant='secondary' className='font-normal'>
-            {t('resources.models.capability.source')}: {t(`resources.models.source.${details.source}`, { defaultValue: details.source })}
-          </Badge>
-          {details.variesByAPIKey && (
-            <Badge variant='secondary' className='font-normal'>
-              {t('resources.models.capability.variesByAPIKey')}
-            </Badge>
-          )}
-          <ModelCapabilityBadge label={t('resources.models.capability.vision')} enabled={details.vision} />
-          <ModelCapabilityBadge label={t('resources.models.capability.toolCall')} enabled={details.toolCall} />
-          <ModelCapabilityBadge label={t('resources.models.capability.reasoning')} enabled={details.reasoning} />
-          <Badge variant='outline' className='font-normal'>
-            {t('resources.models.capability.context')}:{' '}
-            {details.contextLength > 0 ? numberFormatter.format(details.contextLength) : t('resources.models.capability.unknown')}
-          </Badge>
-          <Badge variant='outline' className='font-normal'>
-            {t('resources.models.capability.output')}:{' '}
-            {details.maxOutputTokens === undefined
-              ? t('resources.models.capability.unknown')
-              : numberFormatter.format(details.maxOutputTokens)}
-          </Badge>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SummaryCard({ icon: Icon, label, value }: { icon: typeof Layers3; label: string; value: number }) {
-  return (
-    <Card className='gap-3 py-4 shadow-none'>
-      <CardContent className='flex items-center gap-3 px-4'>
-        <div className='bg-primary/10 text-primary rounded-lg p-2'>
-          <Icon className='size-4' aria-hidden='true' />
-        </div>
-        <div className='min-w-0'>
-          <div className='text-2xl font-semibold tabular-nums'>{value}</div>
-          <div className='text-muted-foreground truncate text-xs'>{label}</div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 const channelAvailabilityPresentation = {
   available: {
@@ -1371,45 +1279,17 @@ export default function CampusResourcesPage() {
 
       <Main fixed className='overflow-y-auto'>
         <div className='mx-auto flex w-full max-w-7xl flex-col gap-5 pb-8'>
-          {!isOwner && <GettingStartedCard />}
-
-          <div className='bg-muted/30 text-muted-foreground flex items-start gap-3 rounded-xl border px-4 py-3 text-sm'>
-            <ShieldCheck className='text-primary mt-0.5 size-4 shrink-0' aria-hidden='true' />
-            <p>{t('resources.privacyNotice')}</p>
+          <div className='flex flex-wrap items-center justify-between gap-3 text-sm'>
+            <p className='text-muted-foreground' data-testid='campus-resources-summary'>
+              {t('resources.activity.summary', { models: data.models.length, channels: data.channels.length, keys: data.apiKeys.length })}
+            </p>
+            <Button variant='outline' size='sm' asChild>
+              <Link to='/project/api-keys'>
+                <KeyRound className='size-4' />
+                {t('resources.activity.myKeys')}
+              </Link>
+            </Button>
           </div>
-
-          <div className='grid gap-3 sm:grid-cols-3' data-testid='campus-resources-summary'>
-            <SummaryCard icon={Layers3} label={t('resources.summary.models')} value={data.models.length} />
-            <SummaryCard icon={KeyRound} label={t('resources.summary.apiKeys')} value={data.apiKeys.length} />
-            <SummaryCard icon={RadioTower} label={t('resources.summary.channels')} value={data.channels.length} />
-          </div>
-
-          <UsageAndBenefits usageOverview={data.usageOverview} donationBenefits={data.donationBenefits} />
-
-          {donatedChannels.length > 0 && (
-            <section className='space-y-4' aria-labelledby='campus-resource-donations-title'>
-              <div className='flex items-start gap-3'>
-                <HeartHandshake className='text-primary mt-0.5 size-5 shrink-0' aria-hidden='true' />
-                <div>
-                  <h3 id='campus-resource-donations-title' className='font-semibold'>
-                    {t('resources.donations.title')}
-                  </h3>
-                  <p className='text-muted-foreground text-sm'>{t('resources.donations.description')}</p>
-                </div>
-              </div>
-
-              <div className='grid gap-4 lg:grid-cols-2' data-testid='campus-resource-donated-channel-list'>
-                {donatedChannels.map((channel, index) => (
-                  <ChannelCard
-                    key={channel.id ?? `${channel.name}-${channel.provider}-${channel.contributor}-${index}`}
-                    channel={channel}
-                    providerQuota={channel.id ? providerQuotaByChannelID.get(normalizeChannelID(channel.id)) : undefined}
-                    quotaLoadState={quotaLoadState}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
 
           <Card className='gap-5 py-5 shadow-none' data-testid='campus-resource-models'>
             <CardHeader className='gap-1 px-5 sm:px-6'>
@@ -1482,14 +1362,50 @@ export default function CampusResourcesPage() {
                       : t('resources.models.emptyForApiKey')}
                 </div>
               ) : (
-                <div className='grid gap-2 sm:grid-cols-2 lg:grid-cols-3' data-testid='campus-resource-model-list'>
-                  {filteredModels.map((model) => (
-                    <ModelCard key={model} model={model} details={modelDetailsByID.get(model)} />
-                  ))}
-                </div>
+                <ModelList
+                  models={filteredModels}
+                  allModels={selectedModels}
+                  details={modelDetailsByID}
+                  channels={data.channels}
+                  activity={data.modelActivity}
+                />
               )}
             </CardContent>
           </Card>
+
+          <details className='rounded-xl border p-4'>
+            <summary className='cursor-pointer text-sm font-medium'>{t('resources.activity.accountDetails')}</summary>
+            <div className='mt-4 space-y-4'>
+              {!isOwner && <GettingStartedCard />}
+              <UsageAndBenefits usageOverview={data.usageOverview} donationBenefits={data.donationBenefits} />
+              <p className='text-muted-foreground text-xs leading-5'>{t('resources.privacyNotice')}</p>
+            </div>
+          </details>
+
+          {donatedChannels.length > 0 && (
+            <section className='space-y-4' aria-labelledby='campus-resource-donations-title'>
+              <div className='flex items-start gap-3'>
+                <HeartHandshake className='text-primary mt-0.5 size-5 shrink-0' aria-hidden='true' />
+                <div>
+                  <h3 id='campus-resource-donations-title' className='font-semibold'>
+                    {t('resources.donations.title')}
+                  </h3>
+                  <p className='text-muted-foreground text-sm'>{t('resources.donations.description')}</p>
+                </div>
+              </div>
+
+              <div className='grid gap-4 lg:grid-cols-2' data-testid='campus-resource-donated-channel-list'>
+                {donatedChannels.map((channel, index) => (
+                  <ChannelCard
+                    key={channel.id ?? `${channel.name}-${channel.provider}-${channel.contributor}-${index}`}
+                    channel={channel}
+                    providerQuota={channel.id ? providerQuotaByChannelID.get(normalizeChannelID(channel.id)) : undefined}
+                    quotaLoadState={quotaLoadState}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
 
           {!isOwner && <ChannelModelManagement />}
 

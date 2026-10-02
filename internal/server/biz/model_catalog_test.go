@@ -259,4 +259,13 @@ func TestListEnabledModelsKeepsConfiguredModelAtomic(t *testing.T) {
 	require.Equal(t, 8192, *models[0].Metadata.Limit.Context)
 	require.NotNil(t, models[0].Metadata.Cost, "owner-configured pricing must remain available")
 	require.Equal(t, 1.0, *models[0].Metadata.Cost.Input)
+
+	// Configured names can differ from the channel's accepted request model.
+	client.Model.Update().Where(model.ModelIDEQ("atomic-model")).SetModelID("public-alias").SaveX(ctx)
+	aliased, err := modelSvc.ListEnabledModels(ctx)
+	require.NoError(t, err)
+	require.Len(t, aliased, 2)
+	require.Equal(t, "public-alias", aliased[0].ID)
+	require.Equal(t, []ModelTestTarget{{ChannelID: fmt.Sprint(channelEntity.ID), ModelID: "atomic-model"}}, aliased[0].RoutingTargets)
+
 }
