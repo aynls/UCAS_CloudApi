@@ -11,3 +11,5 @@ User authorized implementation on 2026-10-02 after discussing the design. Base a
 7. Commit independently reversible changes and tag the reviewed result. Production changes require a concrete verified artifact and an explicit deployment decision; this work must not restart hosts, FRP or unrelated services.
 
 The green history represents observed successful requests, not continuous uptime. Ranking is successful request volume, not user likes. The existing authenticated project boundary remains intact.
+
+Implementation completed locally. See `2026-10-02-model-availability-validation.md` for results and limits. Missing route mappings remain unknown rather than proving unavailability; actual fresh failed route coverage is required for demotion. Model test targets also preserve configured-model associations and per-key channel scope.
