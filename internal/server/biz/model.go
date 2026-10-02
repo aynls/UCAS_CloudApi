@@ -718,8 +718,11 @@ func (svc *ModelService) ListEnabledModels(ctx context.Context) ([]ModelFacade, 
 			}
 
 			resolved := svc.ResolveChannelModelFacade(ch, entries[requestModel])
+			resolved.RoutingTargets = []ModelTestTarget{{ChannelID: fmt.Sprint(ch.ID), ModelID: requestModel}}
 			if index, ok := dynamicIndexes[requestModel]; ok {
+				targets := append(models[index].RoutingTargets, resolved.RoutingTargets...)
 				models[index] = mergeChannelModelFacades(models[index], resolved)
+				models[index].RoutingTargets = targets
 				continue
 			}
 
@@ -761,7 +764,14 @@ func (svc *ModelService) queryConfiguredModelFacades(ctx context.Context, allowe
 		effectiveAssociations := EffectiveModelAssociations(systemSettings, m)
 		associations := MatchConnections(effectiveAssociations, channels)
 		if len(associations) > 0 {
+			targets := make([]ModelTestTarget, 0)
+			for _, connection := range associations {
+				for _, entry := range connection.Models {
+					targets = append(targets, ModelTestTarget{ChannelID: fmt.Sprint(connection.Channel.ID), ModelID: entry.RequestModel})
+				}
+			}
 			models = append(models, ModelFacade{
+				RoutingTargets: targets,
 				ID:             m.ModelID,
 				DisplayName:    m.ModelID,
 				CreatedAt:      m.CreatedAt,
@@ -826,6 +836,7 @@ func (svc *ModelService) OverlayConfiguredModelFacadesForDisplay(ctx context.Con
 			continue
 		}
 		result[index] = ModelFacade{
+			RoutingTargets: facade.RoutingTargets,
 			ID:             facade.ID,
 			DisplayName:    facade.ID,
 			CreatedAt:      row.CreatedAt,
@@ -980,7 +991,16 @@ type UnassociatedChannel struct {
 	Models  []string     `json:"models"`
 }
 
+// ModelTestTarget is a public channel/model pair, never connection credentials.
+type ModelTestTarget struct {
+	ChannelID string `json:"channelID"`
+	ModelID   string `json:"modelID"`
+}
+
 type ModelFacade struct {
+	// RoutingTargets is internal catalog metadata, excluded from provider APIs.
+	RoutingTargets []ModelTestTarget `json:"-"`
+
 	ID string `json:"id"`
 	// Display name, for user-friendly display from anthropic API.
 	DisplayName string `json:"display_name"`

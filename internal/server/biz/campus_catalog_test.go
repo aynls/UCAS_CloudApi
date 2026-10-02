@@ -71,6 +71,7 @@ func TestCampusChannelTestHealthAggregatesOnlyCurrentExactRoutes(t *testing.T) {
 	require.Equal(t, 2, health.RouteCount)
 	require.Equal(t, 2, health.UnknownRouteCount)
 	require.Len(t, health.Routes, 2)
+	require.Equal(t, []string{"gpt-5.6-sol"}, health.Routes[0].RequestModels)
 
 	require.False(t, routes.RecordTestVerdict(key, RouteTestVerdict{Completed: false, Error: "tester crashed"}))
 	health = svc.channelTestHealth(ch)

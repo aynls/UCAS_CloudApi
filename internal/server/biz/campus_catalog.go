@@ -80,6 +80,7 @@ type CampusCatalogService struct {
 // CampusResources is a deliberately narrow public projection. Never replace
 // these DTOs with Ent entities: API keys and channels carry sensitive fields.
 type CampusResources struct {
+	ModelActivity *CampusModelActivity    `json:"modelActivity,omitempty"`
 	Models        []string                `json:"models"`
 	ModelDetails  []CampusModelDetail     `json:"modelDetails"`
 	APIKeys       []CampusAPIKeyResources `json:"apiKeys"`
@@ -132,15 +133,16 @@ type CampusAPIKeyResources struct {
 }
 
 type CampusModelDetail struct {
-	ID              string `json:"id"`
-	Source          string `json:"source"`
-	Vision          bool   `json:"vision"`
-	ToolCall        bool   `json:"toolCall"`
-	Reasoning       bool   `json:"reasoning"`
-	ContextLength   int    `json:"contextLength"`
-	MaxOutputTokens *int   `json:"maxOutputTokens,omitempty"`
-	VariesByAPIKey  bool   `json:"variesByAPIKey,omitempty"`
-	Overridden      bool   `json:"overridden,omitempty"`
+	TestTargets     []ModelTestTarget `json:"testTargets,omitempty"`
+	ID              string            `json:"id"`
+	Source          string            `json:"source"`
+	Vision          bool              `json:"vision"`
+	ToolCall        bool              `json:"toolCall"`
+	Reasoning       bool              `json:"reasoning"`
+	ContextLength   int               `json:"contextLength"`
+	MaxOutputTokens *int              `json:"maxOutputTokens,omitempty"`
+	VariesByAPIKey  bool              `json:"variesByAPIKey,omitempty"`
+	Overridden      bool              `json:"overridden,omitempty"`
 }
 
 type CampusChannelModelCapabilities struct {
@@ -211,6 +213,7 @@ type CampusChannelHealth struct {
 // stable slot distinguishes multiple credentials without exposing their
 // fingerprints, values, or prefixes.
 type CampusChannelRouteHealth struct {
+	RequestModels  []string   `json:"requestModels"`
 	CredentialSlot int        `json:"credentialSlot"`
 	Model          string     `json:"model"`
 	Protocol       string     `json:"protocol"`
@@ -403,6 +406,10 @@ func (svc *CampusCatalogService) GetResources(ctx context.Context) (*CampusResou
 			return resources.ModelDetails[i].ID < resources.ModelDetails[j].ID
 		})
 		resources.Channels, err = svc.listPublicChannels(bypassCtx, projectID, time.Now())
+		if err != nil {
+			return nil, err
+		}
+		resources.ModelActivity, err = svc.campusModelActivity(bypassCtx, projectID, resources.Models, time.Now())
 		if err != nil {
 			return nil, err
 		}
@@ -1063,6 +1070,13 @@ func (svc *CampusCatalogService) channelTestHealth(ch *ent.Channel) *CampusChann
 	bizChannel := &Channel{Channel: ch}
 	credentialSlots := currentCampusRouteCredentialSlots(ch)
 	actualModels := currentCampusRouteModels(bizChannel)
+	requestModels := make(map[string][]string)
+	for name, entry := range bizChannel.GetModelEntries() {
+		requestModels[entry.ActualModel] = append(requestModels[entry.ActualModel], name)
+	}
+	for actual := range requestModels {
+		sort.Strings(requestModels[actual])
+	}
 	formats := currentCampusRouteFormats(bizChannel)
 	if len(credentialSlots) == 0 || len(actualModels) == 0 || len(formats) == 0 {
 		return health
@@ -1085,6 +1099,7 @@ func (svc *CampusCatalogService) channelTestHealth(ch *ent.Channel) *CampusChann
 				snapshot := snapshots[key]
 
 				route := CampusChannelRouteHealth{
+					RequestModels:  requestModels[key.ActualModel],
 					CredentialSlot: credentialSlot,
 					Model:          key.ActualModel,
 					Protocol:       key.APIFormat,
@@ -1581,8 +1596,9 @@ func sortedStringSet(values map[string]struct{}) []string {
 
 func campusModelDetailFromFacade(facade ModelFacade) CampusModelDetail {
 	detail := CampusModelDetail{
-		ID:     strings.TrimSpace(facade.ID),
-		Source: string(facade.MetadataSource),
+		TestTargets: facade.RoutingTargets,
+		ID:          strings.TrimSpace(facade.ID),
+		Source:      string(facade.MetadataSource),
 	}
 	if detail.Source == "" {
 		detail.Source = "default"
@@ -1641,6 +1657,16 @@ func sameCampusModelDetail(left, right CampusModelDetail) bool {
 
 func mergeCampusModelDetails(left, right CampusModelDetail) CampusModelDetail {
 	merged := left
+	seen := make(map[ModelTestTarget]bool)
+	merged.TestTargets = nil
+	for _, targets := range [][]ModelTestTarget{left.TestTargets, right.TestTargets} {
+		for _, target := range targets {
+			if !seen[target] {
+				merged.TestTargets = append(merged.TestTargets, target)
+				seen[target] = true
+			}
+		}
+	}
 	merged.Vision = left.Vision && right.Vision
 	merged.ToolCall = left.ToolCall && right.ToolCall
 	merged.Reasoning = left.Reasoning && right.Reasoning

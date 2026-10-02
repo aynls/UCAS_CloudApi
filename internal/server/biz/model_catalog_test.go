@@ -2,6 +2,7 @@ package biz
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -250,6 +251,7 @@ func TestListEnabledModelsKeepsConfiguredModelAtomic(t *testing.T) {
 	models, err := modelSvc.ListEnabledModels(ctx)
 	require.NoError(t, err)
 	require.Len(t, models, 1)
+	require.Equal(t, []ModelTestTarget{{ChannelID: fmt.Sprint(channelEntity.ID), ModelID: "atomic-model"}}, models[0].RoutingTargets)
 	require.Equal(t, ModelMetadataSourceConfigured, models[0].MetadataSource)
 	require.Equal(t, "owner", string(models[0].MetadataSource))
 	require.Equal(t, "Owner Atomic Model", *models[0].Metadata.Name)
