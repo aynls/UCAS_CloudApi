@@ -37,5 +37,6 @@ const (
 	RedirectURI = "http://localhost:1455/auth/callback"
 	Scopes      = "openid profile email offline_access"
 
-	codexDefaultVersion = "0.144.1"
+	// Keep in sync with upstream Codex compatibility metadata (AxonHub #2591).
+	codexDefaultVersion = "0.159.0"
 )

@@ -215,7 +215,8 @@ func TestCodexOutbound_SessionIDPrecedence(t *testing.T) {
 		assert.Empty(t, finalReq.Header.Get("Session_id"))
 
 		assert.Equal(t, sessionID, finalReq.Header.Get("Conversation_id"))
-		assert.Equal(t, codexDefaultVersion, finalReq.Header.Get("Version"))
+		// Requests made by the shared web tester have no inbound CLI version.
+		assert.Equal(t, "0.159.0", finalReq.Header.Get("Version"))
 	})
 }
 
