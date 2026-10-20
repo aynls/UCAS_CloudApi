@@ -434,7 +434,7 @@ func (a *streamAggregator) processEvent(ev *StreamEvent) {
 
 		part.Final = true
 
-	case StreamEventTypeReasoningSummaryTextDelta:
+	case StreamEventTypeReasoningSummaryTextDelta, StreamEventTypeReasoningTextDelta:
 		item := a.getItemForEvent(ev.OutputIndex, ev.ItemID)
 		if item == nil {
 			item = newAggregatedItem()
@@ -453,7 +453,7 @@ func (a *streamAggregator) processEvent(ev *StreamEvent) {
 		part := ensureSummaryPart(item, summaryIndex)
 		part.Text.WriteString(ev.Delta)
 
-	case StreamEventTypeReasoningSummaryTextDone:
+	case StreamEventTypeReasoningSummaryTextDone, StreamEventTypeReasoningTextDone:
 		item := a.getItemForEvent(ev.OutputIndex, ev.ItemID)
 		if item == nil {
 			item = newAggregatedItem()

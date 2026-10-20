@@ -724,8 +724,18 @@ func convertOutputToMessage(output []Item, transformerMetadata map[string]any) l
 					}
 				}
 			}
-			for _, summary := range outputItem.Summary {
-				reasoningContent.WriteString(summary.Text)
+			before := reasoningContent.Len()
+			if outputItem.Content != nil {
+				for _, part := range outputItem.Content.Items {
+					if part.Type == "reasoning_text" && part.Text != nil {
+						reasoningContent.WriteString(*part.Text)
+					}
+				}
+			}
+			if reasoningContent.Len() == before {
+				for _, summary := range outputItem.Summary {
+					reasoningContent.WriteString(summary.Text)
+				}
 			}
 
 			if outputItem.EncryptedContent != nil && *outputItem.EncryptedContent != "" {

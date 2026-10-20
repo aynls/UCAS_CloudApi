@@ -51,6 +51,8 @@ const (
 	StreamEventTypeReasoningSummaryPartDone  StreamEventType = "response.reasoning_summary_part.done"
 	StreamEventTypeReasoningSummaryTextDelta StreamEventType = "response.reasoning_summary_text.delta"
 	StreamEventTypeReasoningSummaryTextDone  StreamEventType = "response.reasoning_summary_text.done"
+	StreamEventTypeReasoningTextDelta        StreamEventType = "response.reasoning_text.delta"
+	StreamEventTypeReasoningTextDone         StreamEventType = "response.reasoning_text.done"
 
 	// Image generation events.
 
