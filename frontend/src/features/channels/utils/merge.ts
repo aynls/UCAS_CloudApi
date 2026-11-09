@@ -97,6 +97,7 @@ export function mergeChannelSettingsForUpdate(
   };
 
   return {
+    usageAccess: pick('usageAccess', existing?.usageAccess ?? undefined),
     extraModelPrefix: pick('extraModelPrefix', existing?.extraModelPrefix ?? ''),
     modelMappings: pick('modelMappings', existing?.modelMappings ?? []),
     autoTrimedModelPrefixes: pick('autoTrimedModelPrefixes', existing?.autoTrimedModelPrefixes ?? []),
