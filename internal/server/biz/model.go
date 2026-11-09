@@ -629,6 +629,11 @@ func (svc *ModelService) ListEnabledModels(ctx context.Context) ([]ModelFacade, 
 		profile  *objects.APIKeyProfile
 	)
 
+	allowed, err := svc.channelService.AllowedUsageChannelIDs(ctx, lo.Map(channels, func(ch *Channel, _ int) int { return ch.ID }))
+	if err != nil {
+		return nil, err
+	}
+	channels = lo.Filter(channels, func(ch *Channel, _ int) bool { return allowed[ch.ID] })
 	ctx = authz.WithScopeDecision(ctx, scopes.ScopeReadChannels)
 
 	if apiKey, ok := contexts.GetAPIKey(ctx); ok && apiKey != nil {

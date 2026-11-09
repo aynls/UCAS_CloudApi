@@ -162,6 +162,10 @@ func (svc *ChannelOverrideTemplateService) ApplyTemplate(
 	channelIDs []int,
 	mode ApplyTemplateMode,
 ) (updated []*ent.Channel, err error) {
+	if svc.channelService != nil {
+		svc.channelService.settingsMutationMu.Lock()
+		defer svc.channelService.settingsMutationMu.Unlock()
+	}
 	db := svc.entFromContext(ctx)
 
 	template, err := db.ChannelOverrideTemplate.Get(ctx, templateID)
@@ -244,6 +248,10 @@ func (svc *ChannelOverrideTemplateService) ClearTemplates(
 	ctx context.Context,
 	channelIDs []int,
 ) (updated []*ent.Channel, err error) {
+	if svc.channelService != nil {
+		svc.channelService.settingsMutationMu.Lock()
+		defer svc.channelService.settingsMutationMu.Unlock()
+	}
 	db := svc.entFromContext(ctx)
 
 	channels, err := db.Channel.Query().

@@ -170,19 +170,21 @@ type UpdateCampusChannelModelCapabilitiesInput struct {
 }
 
 type CampusChannelResource struct {
-	ID              string               `json:"id"`
-	Name            string               `json:"name"`
-	Provider        string               `json:"provider"`
-	Source          string               `json:"source"`
-	Description     string               `json:"description,omitempty"`
-	Contributor     string               `json:"contributor"`
-	Status          string               `json:"status"`
-	ExpiresAt       *time.Time           `json:"expiresAt,omitempty"`
-	Models          []string             `json:"models"`
-	ModelCount      int                  `json:"modelCount"`
-	EffectiveTokens int64                `json:"effectiveTokens"`
-	CanProbe        bool                 `json:"canProbe"`
-	Health          *CampusChannelHealth `json:"health,omitempty"`
+	UsageAccessMode objects.ChannelUsageAccessMode `json:"usageAccessMode"`
+	CanUse          bool                           `json:"canUse"`
+	ID              string                         `json:"id"`
+	Name            string                         `json:"name"`
+	Provider        string                         `json:"provider"`
+	Source          string                         `json:"source"`
+	Description     string                         `json:"description,omitempty"`
+	Contributor     string                         `json:"contributor"`
+	Status          string                         `json:"status"`
+	ExpiresAt       *time.Time                     `json:"expiresAt,omitempty"`
+	Models          []string                       `json:"models"`
+	ModelCount      int                            `json:"modelCount"`
+	EffectiveTokens int64                          `json:"effectiveTokens"`
+	CanProbe        bool                           `json:"canProbe"`
+	Health          *CampusChannelHealth           `json:"health,omitempty"`
 }
 
 type CampusChannelHealth struct {
@@ -905,6 +907,17 @@ func (svc *CampusCatalogService) listPublicChannels(ctx context.Context, project
 			}
 		}
 
+		resource.UsageAccessMode = objects.ChannelUsageAccessAll
+		if ch.Settings != nil && ch.Settings.UsageAccess != nil {
+			resource.UsageAccessMode = ch.Settings.UsageAccess.Mode
+		}
+		resource.CanUse = ChannelUsageAllowed(ctx, ch)
+		if !resource.CanUse {
+			resource.Models = []string{}
+			resource.ModelCount = 0
+			resource.CanProbe = false
+			resource.Health = nil
+		}
 		result = append(result, resource)
 	}
 
@@ -1303,6 +1316,10 @@ func (svc *CampusCatalogService) PrepareChannelProbe(
 			return preparedProbe{}, fmt.Errorf("load channel for public probe: %w", err)
 		}
 
+		if !ChannelUsageAllowed(ctx, ch) {
+			return preparedProbe{}, ChannelUsageDeniedError()
+		}
+
 		if selectedModel != "" {
 			if _, supported := (&Channel{Channel: ch}).GetModelEntries()[selectedModel]; !supported {
 				return preparedProbe{}, ErrCampusCatalogInvalidInput
@@ -1386,6 +1403,9 @@ func (svc *CampusCatalogService) GetChannelHealth(ctx context.Context, channelID
 			return nil, fmt.Errorf("verify public channel health target: %w", err)
 		}
 
+		if !ChannelUsageAllowed(ctx, ch) {
+			return nil, ChannelUsageDeniedError()
+		}
 		return svc.channelTestHealth(ch), nil
 	})
 }

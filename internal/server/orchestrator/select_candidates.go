@@ -93,6 +93,32 @@ func selectCandidates(inbound *PersistentInboundTransformer) pipeline.Middleware
 			return nil, err
 		}
 
+		if len(candidates) > 0 {
+			allowedIDs := map[int]bool{}
+			if inbound.state.ChannelService != nil {
+				ids := lo.Map(candidates, func(candidate *ChannelModelsCandidate, _ int) int { return candidate.Channel.ID })
+				var err error
+				allowedIDs, err = inbound.state.ChannelService.AllowedUsageChannelIDs(ctx, ids)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				for _, candidate := range candidates {
+					allowedIDs[candidate.Channel.ID] = biz.ChannelUsageAllowed(ctx, candidate.Channel.Channel)
+				}
+			}
+			allowed := candidates[:0]
+			for _, candidate := range candidates {
+				if allowedIDs[candidate.Channel.ID] {
+					allowed = append(allowed, candidate)
+				}
+			}
+			candidates = allowed
+			if len(candidates) == 0 {
+				return nil, biz.ChannelUsageDeniedError()
+			}
+		}
+
 		if log.DebugEnabled(ctx) {
 			log.Debug(ctx, "selected candidates",
 				log.Int("candidate_count", len(candidates)),

@@ -10,6 +10,7 @@ import (
 	"github.com/looplj/axonhub/internal/ent/channel"
 	"github.com/looplj/axonhub/internal/ent/channelmodelprice"
 	"github.com/looplj/axonhub/internal/ent/channelmodelpriceversion"
+	"github.com/looplj/axonhub/internal/objects"
 	"github.com/looplj/axonhub/internal/pkg/xerrors"
 )
 
@@ -24,6 +25,12 @@ func (svc *ChannelService) DuplicateChannel(ctx context.Context, sourceID int, i
 		source, err := db.Channel.Get(ctx, sourceID)
 		if err != nil {
 			return fmt.Errorf("failed to get source channel: %w", err)
+		}
+		if input.Settings == nil {
+			input.Settings = &objects.ChannelSettings{}
+		}
+		if input.Settings.UsageAccess == nil {
+			input.Settings.UsageAccess = cloneChannelUsageAccess(source.Settings)
 		}
 		if input.AutoSyncSupportedModels == nil {
 			input.AutoSyncSupportedModels = new(source.AutoSyncSupportedModels)

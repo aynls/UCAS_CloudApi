@@ -122,6 +122,7 @@ type TransformOptions struct {
 }
 
 type ChannelSettings struct {
+	UsageAccess *ChannelUsageAccess `json:"usageAccess,omitempty"`
 	// ModelMetadataOverrides stores contributor-maintained metadata for models
 	// exposed by this channel. It intentionally remains outside the generic
 	// GraphQL ChannelSettings input/output so callers cannot use it to alter

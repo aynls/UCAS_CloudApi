@@ -3,6 +3,7 @@ package orchestrator
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -116,6 +117,10 @@ func (processor *TestChannelOrchestrator) testChannel(
 	forcedRoute *biz.RouteKey,
 	recordVerdict bool,
 ) (result *TestChannelResult, resultErr error) {
+	if err := processor.channelService.CheckChannelUsageAccess(ctx, channelID.ID); err != nil {
+		return nil, err
+	}
+
 	ctx = contexts.WithIsolatedContainer(ctx)
 	var testGeneration uint64
 	if recordVerdict {
@@ -219,6 +224,9 @@ func (processor *TestChannelOrchestrator) testChannel(
 		Body: body,
 	})
 	testRoute = rawResponse.RouteKey
+	if errors.Is(err, biz.ErrChannelUsageForbidden) {
+		return nil, err
+	}
 
 	if err != nil {
 		rawErr := inbound.TransformError(ctx, err)
@@ -737,6 +745,7 @@ func (processor *TestChannelOrchestrator) handleStreamResponse(
 
 // TestAPIKeyResult represents the result of testing a single API key.
 type TestAPIKeyResult struct {
+	accessErr error
 	KeyPrefix string
 	Success   bool
 	Latency   float64
@@ -761,6 +770,9 @@ func (processor *TestChannelOrchestrator) TestChannelAPIKeys(
 	modelID *string,
 	proxy *httpclient.ProxyConfig,
 ) (*TestChannelAPIKeysResult, error) {
+	if err := processor.channelService.CheckChannelUsageAccess(ctx, channelID.ID); err != nil {
+		return nil, err
+	}
 	ch, err := processor.channelService.GetChannel(ctx, channelID.ID)
 	if err != nil {
 		return nil, err
@@ -815,6 +827,9 @@ func (processor *TestChannelOrchestrator) TestChannelAPIKeys(
 			}
 
 			result := processor.testSingleKey(groupCtx, channelID, apiKey, testModel, useStream, proxy, nil, true)
+			if result.accessErr != nil {
+				return result.accessErr
+			}
 			_, isDisabled := disabledSet[apiKey]
 			result.Disabled = isDisabled
 			results[index] = result
@@ -884,6 +899,10 @@ func (processor *TestChannelOrchestrator) testSingleAPIKey(
 	forcedRoute *biz.RouteKey,
 	recordVerdict bool,
 ) (result *TestAPIKeyResult, resultErr error) {
+	if err := processor.channelService.CheckChannelUsageAccess(ctx, channelID.ID); err != nil {
+		return nil, err
+	}
+
 	ch, err := processor.channelService.GetChannel(ctx, channelID.ID)
 	if err != nil {
 		return nil, err
@@ -912,6 +931,9 @@ func (processor *TestChannelOrchestrator) testSingleAPIKey(
 	}
 
 	result = processor.testSingleKey(ctx, channelID, key, testModel, useStream, proxy, forcedRoute, recordVerdict)
+	if result.accessErr != nil {
+		return nil, result.accessErr
+	}
 	_, isDisabled := disabledSet[key]
 	result.Disabled = isDisabled
 
@@ -950,6 +972,9 @@ func (processor *TestChannelOrchestrator) testSingleKey(
 	forcedRoute *biz.RouteKey,
 	recordVerdict bool,
 ) (result *TestAPIKeyResult) {
+	if err := processor.channelService.CheckChannelUsageAccess(ctx, channelID.ID); err != nil {
+		return &TestAPIKeyResult{accessErr: err}
+	}
 	ctx = contexts.WithIsolatedContainer(ctx)
 	var testGeneration uint64
 	if recordVerdict {
@@ -961,7 +986,7 @@ func (processor *TestChannelOrchestrator) testSingleKey(
 		if result != nil {
 			result.routeKey = routeKey
 		}
-		if !recordVerdict || result == nil || routeKey == nil || ctx.Err() != nil {
+		if !recordVerdict || result == nil || result.accessErr != nil || routeKey == nil || ctx.Err() != nil {
 			return
 		}
 		detail := ""
@@ -1061,6 +1086,9 @@ func (processor *TestChannelOrchestrator) testSingleKey(
 		Body: body,
 	})
 	routeKey = rawResponse.RouteKey
+	if errors.Is(err, biz.ErrChannelUsageForbidden) {
+		return &TestAPIKeyResult{accessErr: err}
+	}
 	if err != nil {
 		rawErr := inbound.TransformError(ctx, err)
 		_, message := testChannelHTTPError(rawErr, ExtractStatusCodeFromError(err), err)

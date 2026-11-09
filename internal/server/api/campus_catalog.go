@@ -196,6 +196,10 @@ func (h *CampusCatalogHandlers) PostChannelProbe(c *gin.Context) {
 		result, testErr := authz.RunWithSystemBypass(probeCtx, "campus-public-channel-probe-execution", func(bypassCtx context.Context) (*orchestrator.TestChannelResult, error) {
 			return h.probe.TestChannel(bypassCtx, channelGUID, &modelID, nil)
 		})
+		if errors.Is(testErr, biz.ErrChannelUsageForbidden) {
+			h.writeCampusCatalogError(c, testErr, "channel access revoked")
+			return
+		}
 		if testErr != nil {
 			errorMessage := biz.SanitizeCampusDiagnosticError(testErr.Error())
 			attempts = append(attempts, campusChannelProbeAttempt{
@@ -246,6 +250,10 @@ func (h *CampusCatalogHandlers) PostChannelProbe(c *gin.Context) {
 	finalAttempt := attempts[len(attempts)-1]
 	h.recordPublicProbeResult(probeCtx, channelID, finalAttempt.Success)
 	health, healthErr := reader.GetChannelHealth(c.Request.Context(), channelID)
+	if errors.Is(healthErr, biz.ErrChannelUsageForbidden) {
+		h.writeCampusCatalogError(c, healthErr, "channel access revoked")
+		return
+	}
 	if healthErr != nil {
 		log.Error(c.Request.Context(), "failed to reload channel health after probe", log.Int("channel_id", channelID), log.Cause(healthErr))
 	}
@@ -330,7 +338,7 @@ func (h *CampusCatalogHandlers) writeCampusCatalogError(c *gin.Context, err erro
 		JSONError(c, http.StatusBadRequest, err)
 	case errors.Is(err, biz.ErrCampusCatalogUnauthorized):
 		JSONError(c, http.StatusUnauthorized, err)
-	case errors.Is(err, biz.ErrCampusCatalogForbidden), errors.Is(err, biz.ErrCampusOwnerOverrideForbidden):
+	case errors.Is(err, biz.ErrChannelUsageForbidden), errors.Is(err, biz.ErrCampusCatalogForbidden), errors.Is(err, biz.ErrCampusOwnerOverrideForbidden):
 		JSONError(c, http.StatusForbidden, err)
 	case errors.Is(err, biz.ErrCampusChannelNotFound):
 		JSONError(c, http.StatusNotFound, err)
@@ -423,4 +431,41 @@ func ensureJSONEOF(decoder *json.Decoder) error {
 	}
 
 	return nil
+}
+
+func (h *CampusCatalogHandlers) GetAccessUsers(c *gin.Context) {
+	c.Header("Cache-Control", "private, no-store")
+	reader, ok := h.catalog.(interface {
+		ListAccessUsers(context.Context, string, int, []int) (*biz.CampusAccessUsers, error)
+	})
+	if !ok {
+		JSONError(c, http.StatusInternalServerError, errors.New("user directory unavailable"))
+		return
+	}
+	after := 0
+	if raw := c.Query("after"); raw != "" {
+		value, err := strconv.Atoi(raw)
+		if err != nil || value < 0 {
+			JSONError(c, http.StatusBadRequest, biz.ErrCampusCatalogInvalidInput)
+			return
+		}
+		after = value
+	}
+	var ids []int
+	if raw := c.Query("ids"); raw != "" {
+		for _, part := range strings.Split(raw, ",") {
+			id, err := strconv.Atoi(part)
+			if err != nil || id <= 0 {
+				JSONError(c, http.StatusBadRequest, biz.ErrCampusCatalogInvalidInput)
+				return
+			}
+			ids = append(ids, id)
+		}
+	}
+	result, err := reader.ListAccessUsers(c.Request.Context(), c.Query("q"), after, ids)
+	if err != nil {
+		h.writeCampusCatalogError(c, err, "failed to load user directory")
+		return
+	}
+	c.JSON(http.StatusOK, result)
 }

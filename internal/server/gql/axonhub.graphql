@@ -148,7 +148,12 @@ input ChannelProviderQuotaSettingsInput {
   opencodeGo: OpenCodeGoQuotaSettingsInput
 }
 
+enum ChannelUsageAccessMode { all selected }
+type ChannelUsageAccess { mode: ChannelUsageAccessMode! userIDs: [Int!]! }
+input ChannelUsageAccessInput { mode: ChannelUsageAccessMode! userIDs: [Int!]! }
+
 type ChannelSettings {
+  usageAccess: ChannelUsageAccess
   extraModelPrefix: String
   modelMappings: [ModelMapping!]
   autoTrimedModelPrefixes: [String!]
@@ -187,6 +192,7 @@ input ModelMappingInput {
 }
 
 input ChannelSettingsInput {
+  usageAccess: ChannelUsageAccessInput
   extraModelPrefix: String
   modelMappings: [ModelMappingInput!]
   autoTrimedModelPrefixes: [String!]

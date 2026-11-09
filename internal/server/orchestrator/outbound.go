@@ -452,6 +452,22 @@ func (p *PersistentOutboundTransformer) TransformRequest(ctx context.Context, ll
 		return nil, fmt.Errorf("%w: all candidates exhausted", biz.ErrInternal)
 	}
 
+	for p.state.CurrentCandidateIndex < len(p.state.ChannelModelsCandidates) {
+		candidate := p.state.ChannelModelsCandidates[p.state.CurrentCandidateIndex]
+		err := p.checkUsageAccess(ctx, candidate.Channel)
+		if err == nil {
+			break
+		}
+		if !errors.Is(err, biz.ErrChannelUsageForbidden) {
+			return nil, err
+		}
+		p.state.CurrentCandidateIndex++
+		p.state.CurrentModelIndex = 0
+		p.state.ForcedCredential = ""
+	}
+	if p.state.CurrentCandidateIndex >= len(p.state.ChannelModelsCandidates) {
+		return nil, biz.ChannelUsageDeniedError()
+	}
 	candidate := p.state.ChannelModelsCandidates[p.state.CurrentCandidateIndex]
 	if p.state.ForcedCredential != "" {
 		candidateCopy := *candidate
@@ -700,7 +716,7 @@ func (p *PersistentOutboundTransformer) OnAttemptFailure(ctx context.Context, er
 	// A schema-validating 400 describes the request bytes, not route health.
 	// Do not launch TestChannel or let the failed client payload influence the
 	// binary availability verdict.
-	if pipeline.IsDeterministicRequestError(err) {
+	if isNeutralAttemptError(ctx, err) {
 		return
 	}
 	p.triggerProgrammaticTest(ctx, false)
@@ -1049,8 +1065,8 @@ func (p *PersistentOutboundTransformer) CustomizeExecutor(executor pipeline.Exec
 		outbound = channel.Outbound
 	}
 	if custom, ok := outbound.(pipeline.ChannelCustomizedExecutor); ok {
-		return custom.CustomizeExecutor(customizedExecutor)
+		customizedExecutor = custom.CustomizeExecutor(customizedExecutor)
 	}
 
-	return customizedExecutor
+	return &channelUsageExecutor{Executor: customizedExecutor, check: func(ctx context.Context) error { return p.checkUsageAccess(ctx, channel) }}
 }

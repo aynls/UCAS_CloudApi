@@ -120,6 +120,7 @@ func SetupRoutes(server *Server, handlers Handlers, client *ent.Client, services
 			middleware.WithTimeout(server.Config.RequestTimeout),
 			handlers.System.GetProviderQuotaView,
 		)
+		adminGroup.GET("/campus/access-users", middleware.WithTimeout(server.Config.RequestTimeout), handlers.CampusCatalog.GetAccessUsers)
 		adminGroup.GET(
 			"/campus/resources",
 			middleware.WithTimeout(server.Config.RequestTimeout),

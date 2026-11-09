@@ -549,6 +549,7 @@ type ComplexityRoot struct {
 		RetryableErrorPatterns   func(childComplexity int) int
 		RetryableStatusCodes     func(childComplexity int) int
 		TransformOptions         func(childComplexity int) int
+		UsageAccess              func(childComplexity int) int
 	}
 
 	ChannelSuccessRate struct {
@@ -575,6 +576,11 @@ type ComplexityRoot struct {
 	ChannelTypeCount struct {
 		Count func(childComplexity int) int
 		Type  func(childComplexity int) int
+	}
+
+	ChannelUsageAccess struct {
+		Mode    func(childComplexity int) int
+		UserIDs func(childComplexity int) int
 	}
 
 	CleanupOption struct {
@@ -2087,6 +2093,7 @@ type ChannelResolver interface {
 	UserID(ctx context.Context, obj *ent.Channel) (*objects.GUID, error)
 
 	Policies(ctx context.Context, obj *ent.Channel) (*objects.ChannelPolicies, error)
+	Settings(ctx context.Context, obj *ent.Channel) (*objects.ChannelSettings, error)
 
 	ProviderQuotaStatus(ctx context.Context, obj *ent.Channel) (*ent.ProviderQuotaStatus, error)
 	DefaultEndpoints(ctx context.Context, obj *ent.Channel) ([]*objects.ChannelEndpoint, error)
@@ -4190,6 +4197,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ChannelSettings.TransformOptions(childComplexity), true
+	case "ChannelSettings.usageAccess":
+		if e.complexity.ChannelSettings.UsageAccess == nil {
+			break
+		}
+
+		return e.complexity.ChannelSettings.UsageAccess(childComplexity), true
 
 	case "ChannelSuccessRate.channelDisabled":
 		if e.complexity.ChannelSuccessRate.ChannelDisabled == nil {
@@ -4278,6 +4291,19 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ChannelTypeCount.Type(childComplexity), true
+
+	case "ChannelUsageAccess.mode":
+		if e.complexity.ChannelUsageAccess.Mode == nil {
+			break
+		}
+
+		return e.complexity.ChannelUsageAccess.Mode(childComplexity), true
+	case "ChannelUsageAccess.userIDs":
+		if e.complexity.ChannelUsageAccess.UserIDs == nil {
+			break
+		}
+
+		return e.complexity.ChannelUsageAccess.UserIDs(childComplexity), true
 
 	case "CleanupOption.cleanupDays":
 		if e.complexity.CleanupOption.CleanupDays == nil {
@@ -11230,6 +11256,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputChannelSettingsInput,
 		ec.unmarshalInputChannelTagsModelAssociationInput,
 		ec.unmarshalInputChannelTagsRegexAssociationInput,
+		ec.unmarshalInputChannelUsageAccessInput,
 		ec.unmarshalInputChannelWhereInput,
 		ec.unmarshalInputCleanupOptionInput,
 		ec.unmarshalInputClearCacheInput,
@@ -19477,7 +19504,7 @@ func (ec *executionContext) _Channel_settings(ctx context.Context, field graphql
 		field,
 		ec.fieldContext_Channel_settings,
 		func(ctx context.Context) (any, error) {
-			return obj.Settings, nil
+			return ec.resolvers.Channel().Settings(ctx, obj)
 		},
 		nil,
 		ec.marshalOChannelSettings2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐChannelSettings,
@@ -19490,10 +19517,12 @@ func (ec *executionContext) fieldContext_Channel_settings(_ context.Context, fie
 	fc = &graphql.FieldContext{
 		Object:     "Channel",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "usageAccess":
+				return ec.fieldContext_ChannelSettings_usageAccess(ctx, field)
 			case "extraModelPrefix":
 				return ec.fieldContext_ChannelSettings_extraModelPrefix(ctx, field)
 			case "modelMappings":
@@ -23697,6 +23726,41 @@ func (ec *executionContext) fieldContext_ChannelRegexAssociation_pattern(_ conte
 	return fc, nil
 }
 
+func (ec *executionContext) _ChannelSettings_usageAccess(ctx context.Context, field graphql.CollectedField, obj *objects.ChannelSettings) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChannelSettings_usageAccess,
+		func(ctx context.Context) (any, error) {
+			return obj.UsageAccess, nil
+		},
+		nil,
+		ec.marshalOChannelUsageAccess2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐChannelUsageAccess,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChannelSettings_usageAccess(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelSettings",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "mode":
+				return ec.fieldContext_ChannelUsageAccess_mode(ctx, field)
+			case "userIDs":
+				return ec.fieldContext_ChannelUsageAccess_userIDs(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ChannelUsageAccess", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ChannelSettings_extraModelPrefix(ctx context.Context, field graphql.CollectedField, obj *objects.ChannelSettings) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -24645,6 +24709,64 @@ func (ec *executionContext) _ChannelTypeCount_count(ctx context.Context, field g
 func (ec *executionContext) fieldContext_ChannelTypeCount_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ChannelTypeCount",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChannelUsageAccess_mode(ctx context.Context, field graphql.CollectedField, obj *objects.ChannelUsageAccess) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChannelUsageAccess_mode,
+		func(ctx context.Context) (any, error) {
+			return obj.Mode, nil
+		},
+		nil,
+		ec.marshalNChannelUsageAccessMode2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐChannelUsageAccessMode,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChannelUsageAccess_mode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelUsageAccess",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ChannelUsageAccessMode does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChannelUsageAccess_userIDs(ctx context.Context, field graphql.CollectedField, obj *objects.ChannelUsageAccess) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChannelUsageAccess_userIDs,
+		func(ctx context.Context) (any, error) {
+			return obj.UserIDs, nil
+		},
+		nil,
+		ec.marshalNInt2ᚕintᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChannelUsageAccess_userIDs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelUsageAccess",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -66321,13 +66443,20 @@ func (ec *executionContext) unmarshalInputChannelSettingsInput(ctx context.Conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"extraModelPrefix", "modelMappings", "autoTrimedModelPrefixes", "hideOriginalModels", "hideMappedModels", "lowercaseModelId", "proxy", "transformOptions", "headerOverrideOperations", "bodyOverrideOperations", "passThroughUserAgent", "passThroughBody", "rateLimit", "retryableStatusCodes", "retryableErrorPatterns", "providerQuota"}
+	fieldsInOrder := [...]string{"usageAccess", "extraModelPrefix", "modelMappings", "autoTrimedModelPrefixes", "hideOriginalModels", "hideMappedModels", "lowercaseModelId", "proxy", "transformOptions", "headerOverrideOperations", "bodyOverrideOperations", "passThroughUserAgent", "passThroughBody", "rateLimit", "retryableStatusCodes", "retryableErrorPatterns", "providerQuota"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "usageAccess":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("usageAccess"))
+			data, err := ec.unmarshalOChannelUsageAccessInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐChannelUsageAccess(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UsageAccess = data
 		case "extraModelPrefix":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extraModelPrefix"))
 			data, err := ec.unmarshalOString2string(ctx, v)
@@ -66508,6 +66637,40 @@ func (ec *executionContext) unmarshalInputChannelTagsRegexAssociationInput(ctx c
 				return it, err
 			}
 			it.Pattern = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputChannelUsageAccessInput(ctx context.Context, obj any) (objects.ChannelUsageAccess, error) {
+	var it objects.ChannelUsageAccess
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"mode", "userIDs"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "mode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("mode"))
+			data, err := ec.unmarshalNChannelUsageAccessMode2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐChannelUsageAccessMode(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Mode = data
+		case "userIDs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userIDs"))
+			data, err := ec.unmarshalNInt2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UserIDs = data
 		}
 	}
 
@@ -91304,7 +91467,38 @@ func (ec *executionContext) _Channel(ctx context.Context, sel ast.SelectionSet, 
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "settings":
-			out.Values[i] = ec._Channel_settings(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Channel_settings(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "orderingWeight":
 			out.Values[i] = ec._Channel_orderingWeight(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -93546,6 +93740,8 @@ func (ec *executionContext) _ChannelSettings(ctx context.Context, sel ast.Select
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("ChannelSettings")
+		case "usageAccess":
+			out.Values[i] = ec._ChannelSettings_usageAccess(ctx, field, obj)
 		case "extraModelPrefix":
 			out.Values[i] = ec._ChannelSettings_extraModelPrefix(ctx, field, obj)
 		case "modelMappings":
@@ -93849,6 +94045,50 @@ func (ec *executionContext) _ChannelTypeCount(ctx context.Context, sel ast.Selec
 			}
 		case "count":
 			out.Values[i] = ec._ChannelTypeCount_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var channelUsageAccessImplementors = []string{"ChannelUsageAccess"}
+
+func (ec *executionContext) _ChannelUsageAccess(ctx context.Context, sel ast.SelectionSet, obj *objects.ChannelUsageAccess) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, channelUsageAccessImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ChannelUsageAccess")
+		case "mode":
+			out.Values[i] = ec._ChannelUsageAccess_mode(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "userIDs":
+			out.Values[i] = ec._ChannelUsageAccess_userIDs(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -110670,6 +110910,23 @@ func (ec *executionContext) marshalNChannelTypeCount2ᚖgithubᚗcomᚋloopljᚋ
 	return ec._ChannelTypeCount(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNChannelUsageAccessMode2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐChannelUsageAccessMode(ctx context.Context, v any) (objects.ChannelUsageAccessMode, error) {
+	tmp, err := graphql.UnmarshalString(v)
+	res := objects.ChannelUsageAccessMode(tmp)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNChannelUsageAccessMode2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐChannelUsageAccessMode(ctx context.Context, sel ast.SelectionSet, v objects.ChannelUsageAccessMode) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalString(string(v))
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) unmarshalNChannelWhereInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐChannelWhereInput(ctx context.Context, v any) (*ent.ChannelWhereInput, error) {
 	res, err := ec.unmarshalInputChannelWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
@@ -111769,6 +112026,36 @@ func (ec *executionContext) marshalNInt2int64(ctx context.Context, sel ast.Selec
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNInt2ᚕintᚄ(ctx context.Context, v any) ([]int, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]int, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNInt2int(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNInt2ᚕintᚄ(ctx context.Context, sel ast.SelectionSet, v []int) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNInt2int(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNJSONRawMessage2githubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐJSONRawMessage(ctx context.Context, v any) (objects.JSONRawMessage, error) {
@@ -117052,6 +117339,21 @@ func (ec *executionContext) marshalOChannelType2ᚖgithubᚗcomᚋloopljᚋaxonh
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalOChannelUsageAccess2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐChannelUsageAccess(ctx context.Context, sel ast.SelectionSet, v *objects.ChannelUsageAccess) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ChannelUsageAccess(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOChannelUsageAccessInput2ᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋobjectsᚐChannelUsageAccess(ctx context.Context, v any) (*objects.ChannelUsageAccess, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputChannelUsageAccessInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOChannelWhereInput2ᚕᚖgithubᚗcomᚋloopljᚋaxonhubᚋinternalᚋentᚐChannelWhereInputᚄ(ctx context.Context, v any) ([]*ent.ChannelWhereInput, error) {

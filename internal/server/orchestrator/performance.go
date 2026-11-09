@@ -174,7 +174,7 @@ func isNeutralAttemptError(ctx context.Context, err error) bool {
 	if ctx != nil && ctx.Err() != nil {
 		return true
 	}
-	return errors.Is(err, context.Canceled) ||
+	return errors.Is(err, biz.ErrChannelUsageForbidden) || errors.Is(err, context.Canceled) ||
 		errors.Is(err, errSkipCandidateByCircuitBreaker) ||
 		pipeline.IsDeterministicRequestError(err) ||
 		isChannelQueueError(err) ||

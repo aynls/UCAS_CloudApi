@@ -494,6 +494,17 @@ func TestCampusCatalogPublicChannelsExposeRequestModelsAndProjectEffectiveTokens
 	require.Equal(t, []string{"alpha", "beta"}, byName["直连渠道"].Models)
 	require.Equal(t, 2, byName["直连渠道"].ModelCount)
 	require.Equal(t, int64(15), byName["直连渠道"].EffectiveTokens)
+	client.Channel.UpdateOneID(mappedChannel.ID).SetSettings(&objects.ChannelSettings{UsageAccess: &objects.ChannelUsageAccess{Mode: objects.ChannelUsageAccessSelected, UserIDs: []int{999}}}).SaveX(setupCtx)
+	restricted, err := (&CampusCatalogService{client: client}).listPublicChannels(setupCtx, campusProject.ID, time.Now())
+	require.NoError(t, err)
+	for _, resource := range restricted {
+		require.Equal(t, byName[resource.Name].EffectiveTokens, resource.EffectiveTokens, "ACL changes never change historical token totals")
+		if resource.ID == fmt.Sprint(mappedChannel.ID) {
+			require.False(t, resource.CanUse)
+			require.Empty(t, resource.Models)
+		}
+	}
+
 }
 
 func TestCampusCatalogServiceAuthorizationAndOwnerIsolation(t *testing.T) {

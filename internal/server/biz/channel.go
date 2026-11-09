@@ -667,6 +667,11 @@ func (svc *ChannelService) ListModels(ctx context.Context, input ListModelsInput
 // createChannel creates a new channel without triggering a reload.
 // This is useful for batch operations where reload should happen once at the end.
 func (svc *ChannelService) createChannel(ctx context.Context, input ent.CreateChannelInput) (*ent.Channel, error) {
+	if input.Settings != nil {
+		if err := svc.normalizeUsageAccess(ctx, input.Settings.UsageAccess); err != nil {
+			return nil, err
+		}
+	}
 	currentUser, hasCurrentUser := contexts.GetUser(ctx)
 	isDonatedChannel := hasCurrentUser && currentUser != nil && !currentUser.IsOwner
 	if input.AutoSyncSupportedModels == nil {
@@ -836,6 +841,10 @@ func NormalizeRetryableErrorPatterns(settings *objects.ChannelSettings) error {
 
 // UpdateChannel updates an existing channel with the provided input.
 func (svc *ChannelService) UpdateChannel(ctx context.Context, id int, input *ent.UpdateChannelInput) (*ent.Channel, error) {
+	if input.ClearSettings {
+		input.Settings = &objects.ChannelSettings{}
+		input.ClearSettings = false
+	}
 	if input.Settings != nil {
 		svc.settingsMutationMu.Lock()
 		defer svc.settingsMutationMu.Unlock()
@@ -854,6 +863,9 @@ func (svc *ChannelService) UpdateChannel(ctx context.Context, id int, input *ent
 	// inputs. Preserve the latest stored value while holding settingsMutationMu;
 	// only UpdateChannelModelMetadataOverride may change this hidden field.
 	if input.Settings != nil {
+		if err := svc.preserveAndValidateUsageAccess(ctx, existingChannel, input.Settings); err != nil {
+			return nil, err
+		}
 		input.Settings.ModelMetadataOverrides = nil
 		if existingChannel.Settings != nil {
 			input.Settings.ModelMetadataOverrides = cloneModelMetadataOverrides(existingChannel.Settings.ModelMetadataOverrides)

@@ -92,6 +92,18 @@ func (r *channelResolver) Policies(ctx context.Context, obj *ent.Channel) (*obje
 	return &obj.Policies, nil
 }
 
+// Settings is the resolver for the settings field.
+func (r *channelResolver) Settings(ctx context.Context, obj *ent.Channel) (*objects.ChannelSettings, error) {
+	if obj.Settings == nil {
+		return nil, nil
+	}
+	settings := *obj.Settings
+	if !canReadChannelSecrets(ctx, obj) {
+		settings.UsageAccess = nil
+	}
+	return &settings, nil
+}
+
 // ProviderQuotaStatus is the resolver for the providerQuotaStatus field.
 // It returns null (not an error) when no quota status exists for the channel.
 func (r *channelResolver) ProviderQuotaStatus(ctx context.Context, obj *ent.Channel) (*ent.ProviderQuotaStatus, error) {
