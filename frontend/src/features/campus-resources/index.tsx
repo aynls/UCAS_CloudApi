@@ -448,7 +448,7 @@ function ChannelCard({
           <Badge variant='secondary' className='self-start'>
             {t(`resources.channels.source.${channel.source}`)}
           </Badge>
-          {channel.canProbe && channel.id && (
+          {channel.canUse && channel.canProbe && channel.id && (
             <div className='flex min-w-0 items-center gap-2 sm:justify-end'>
               <Select value={effectiveProbeModel} onValueChange={setProbeModel} disabled={probeChannel.isPending}>
                 <SelectTrigger
@@ -490,65 +490,80 @@ function ChannelCard({
             </div>
           )}
         </div>
-        {channel.canProbe && channel.id && <p className='text-muted-foreground text-xs leading-4'>{t('resources.channels.probe.hint')}</p>}
+        {channel.canUse && channel.canProbe && channel.id && (
+          <p className='text-muted-foreground text-xs leading-4'>{t('resources.channels.probe.hint')}</p>
+        )}
       </CardHeader>
 
       <CardContent className='flex flex-1 flex-col gap-4 px-5'>
         <p className='text-muted-foreground min-h-10 text-sm leading-5'>{channel.description || t('resources.channels.noDescription')}</p>
 
         <ChannelQuota quota={providerQuota} loadState={quotaLoadState} />
-        <ChannelModels models={channel.models} />
+        {channel.usageAccessMode === 'selected' && (
+          <Badge variant='outline' className='self-start'>
+            {t('resources.channels.restricted')}
+          </Badge>
+        )}
+        {channel.canUse && (
+          <>
+            <ChannelModels models={channel.models} />
 
-        <dl className='bg-muted/20 grid gap-2 rounded-lg border p-3 text-xs' data-testid='campus-channel-health-details'>
-          <div className='flex items-center justify-between gap-3'>
-            <dt className='text-muted-foreground'>{t('resources.channels.availability.label')}</dt>
-            <dd className='font-medium'>{t(`resources.channels.availability.state.${availabilityState}`)}</dd>
-          </div>
-          <div className='flex items-center justify-between gap-3'>
-            <dt className='text-muted-foreground'>{t('resources.channels.availability.routeSummary')}</dt>
-            <dd className='text-right font-medium'>
-              {t('resources.channels.availability.routeSummaryValue', {
-                available: channel.health?.availableRouteCount ?? 0,
-                unavailable: channel.health?.unavailableRouteCount ?? 0,
-                unknown: channel.health?.unknownRouteCount ?? 0,
-              })}
-            </dd>
-          </div>
-          <div className='flex items-center justify-between gap-3'>
-            <dt className='text-muted-foreground'>{t('resources.channels.availability.lastTest')}</dt>
-            <dd className='text-right font-medium'>
-              {lastTestAt ? <time dateTime={lastTestAt}>{formattedLastChecked}</time> : t('resources.channels.availability.neverTested')}
-            </dd>
-          </div>
-          <div className='flex items-center justify-between gap-3'>
-            <dt className='text-muted-foreground'>{t('resources.channels.availability.testModel')}</dt>
-            <dd className='max-w-[65%] truncate text-right font-mono font-medium' title={channel.health?.testModel}>
-              {channel.health?.testModel || t('resources.channels.probe.notReported')}
-            </dd>
-          </div>
-          <div className='flex items-center justify-between gap-3'>
-            <dt className='text-muted-foreground'>{t('resources.channels.availability.testProtocol')}</dt>
-            <dd className='max-w-[65%] truncate text-right font-mono font-medium' title={channel.health?.testProtocol}>
-              {channel.health?.testProtocol || t('resources.channels.probe.notReported')}
-            </dd>
-          </div>
-          {channel.health?.lastTestError && (
-            <div className='space-y-1 border-t pt-2'>
-              <dt className='text-muted-foreground'>{t('resources.channels.availability.lastError')}</dt>
-              <dd>
-                <code className='bg-background/70 block rounded border p-2 text-[11px] leading-4 break-all whitespace-pre-wrap text-red-700 dark:text-red-400'>
-                  {channel.health.lastTestError}
-                </code>
-              </dd>
-            </div>
-          )}
-        </dl>
-        <p className='text-muted-foreground rounded-lg border border-dashed px-3 py-2 text-xs leading-4'>
-          {t('resources.channels.availability.explanation')}
-        </p>
-        <ChannelRoutes routes={channel.health?.routes ?? []} />
+            <dl className='bg-muted/20 grid gap-2 rounded-lg border p-3 text-xs' data-testid='campus-channel-health-details'>
+              <div className='flex items-center justify-between gap-3'>
+                <dt className='text-muted-foreground'>{t('resources.channels.availability.label')}</dt>
+                <dd className='font-medium'>{t(`resources.channels.availability.state.${availabilityState}`)}</dd>
+              </div>
+              <div className='flex items-center justify-between gap-3'>
+                <dt className='text-muted-foreground'>{t('resources.channels.availability.routeSummary')}</dt>
+                <dd className='text-right font-medium'>
+                  {t('resources.channels.availability.routeSummaryValue', {
+                    available: channel.health?.availableRouteCount ?? 0,
+                    unavailable: channel.health?.unavailableRouteCount ?? 0,
+                    unknown: channel.health?.unknownRouteCount ?? 0,
+                  })}
+                </dd>
+              </div>
+              <div className='flex items-center justify-between gap-3'>
+                <dt className='text-muted-foreground'>{t('resources.channels.availability.lastTest')}</dt>
+                <dd className='text-right font-medium'>
+                  {lastTestAt ? (
+                    <time dateTime={lastTestAt}>{formattedLastChecked}</time>
+                  ) : (
+                    t('resources.channels.availability.neverTested')
+                  )}
+                </dd>
+              </div>
+              <div className='flex items-center justify-between gap-3'>
+                <dt className='text-muted-foreground'>{t('resources.channels.availability.testModel')}</dt>
+                <dd className='max-w-[65%] truncate text-right font-mono font-medium' title={channel.health?.testModel}>
+                  {channel.health?.testModel || t('resources.channels.probe.notReported')}
+                </dd>
+              </div>
+              <div className='flex items-center justify-between gap-3'>
+                <dt className='text-muted-foreground'>{t('resources.channels.availability.testProtocol')}</dt>
+                <dd className='max-w-[65%] truncate text-right font-mono font-medium' title={channel.health?.testProtocol}>
+                  {channel.health?.testProtocol || t('resources.channels.probe.notReported')}
+                </dd>
+              </div>
+              {channel.health?.lastTestError && (
+                <div className='space-y-1 border-t pt-2'>
+                  <dt className='text-muted-foreground'>{t('resources.channels.availability.lastError')}</dt>
+                  <dd>
+                    <code className='bg-background/70 block rounded border p-2 text-[11px] leading-4 break-all whitespace-pre-wrap text-red-700 dark:text-red-400'>
+                      {channel.health.lastTestError}
+                    </code>
+                  </dd>
+                </div>
+              )}
+            </dl>
+            <p className='text-muted-foreground rounded-lg border border-dashed px-3 py-2 text-xs leading-4'>
+              {t('resources.channels.availability.explanation')}
+            </p>
+            <ChannelRoutes routes={channel.health?.routes ?? []} />
+          </>
+        )}
 
-        {(lastProbeResult || probeRequestError) && (
+        {channel.canUse && (lastProbeResult || probeRequestError) && (
           <div
             className={cn(
               'space-y-3 rounded-lg border p-3 text-xs',
@@ -647,10 +662,12 @@ function ChannelCard({
               {channel.expiresAt ? <time dateTime={channel.expiresAt}>{formattedExpiry}</time> : t('resources.channels.noExpiry')}
             </dd>
           </div>
-          <div className='flex items-center justify-between gap-3'>
-            <dt className='text-muted-foreground'>{t('resources.channels.modelCount')}</dt>
-            <dd className='font-mono font-medium tabular-nums'>{channel.modelCount}</dd>
-          </div>
+          {channel.canUse && (
+            <div className='flex items-center justify-between gap-3'>
+              <dt className='text-muted-foreground'>{t('resources.channels.modelCount')}</dt>
+              <dd className='font-mono font-medium tabular-nums'>{channel.modelCount}</dd>
+            </div>
+          )}
           <div className='flex items-center justify-between gap-3'>
             <dt className='text-muted-foreground'>{t('resources.channels.effectiveTokens')}</dt>
             <dd className='text-right font-mono font-medium tabular-nums'>

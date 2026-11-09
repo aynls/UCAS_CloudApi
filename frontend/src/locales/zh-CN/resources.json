@@ -209,5 +209,6 @@
   "resources.activity.testPassed": "本次路线测试通过",
   "resources.activity.testFailed": "本次路线测试未通过",
   "resources.activity.legend": "24 小时成功调用排行 · 绿色有成功记录，灰色无记录 · 统计说明",
-  "resources.activity.myKeys": "我的 API 密钥"
+  "resources.activity.myKeys": "我的 API 密钥",
+  "resources.channels.restricted": "仅指定用户可用"
 }

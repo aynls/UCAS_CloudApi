@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useEffect, useMemo, useRef, useState, memo } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -61,9 +59,12 @@ import { ProxyConfig, useOAuthFlow } from '../hooks/use-oauth-flow';
 import { mergeChannelSettingsForUpdate } from '../utils/merge';
 import { addManualModels, isProviderCatalogSubset, reconcileFetchedModelSelection, removeChannelModels } from '../utils/model-selection';
 import { isValidModelPattern, matchesModelPattern } from '../utils/pattern';
+import { ChannelUsageAccessField } from './channel-usage-access-field';
 import { ProxyType } from './channels-proxy-dialog';
 import { CopilotDeviceFlow } from './copilot-device-flow';
 import { ManualModelBadge } from './manual-model-badge';
+
+('use client');
 
 interface Props {
   currentRow?: Channel;
@@ -1166,6 +1167,10 @@ export function ChannelsActionDialog({ currentRow, duplicateFromRow, open, onOpe
       return;
     }
 
+    if (values.settings?.usageAccess?.mode === 'selected' && values.settings.usageAccess.userIDs.length === 0) {
+      toast.error(t('channels.usageAccess.required'));
+      return;
+    }
     try {
       if (ownerEditingDonation) {
         delete values.expiresAt;
@@ -2854,6 +2859,22 @@ export function ChannelsActionDialog({ currentRow, duplicateFromRow, open, onOpe
                                 isLoading={isLoadingTags}
                               />
                               <p className='text-muted-foreground text-xs'>{t('channels.dialogs.fields.tags.description')}</p>
+                              <FormMessage />
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name='settings.usageAccess'
+                        render={({ field }) => (
+                          <FormItem className='grid grid-cols-1 items-start gap-x-6 gap-y-2 md:grid-cols-8'>
+                            <FormLabel className='pt-2 font-medium md:col-span-2 md:text-right'>
+                              {t('channels.usageAccess.label')}
+                            </FormLabel>
+                            <div className='space-y-1 md:col-span-6'>
+                              <ChannelUsageAccessField value={field.value} onChange={field.onChange} />
                               <FormMessage />
                             </div>
                           </FormItem>

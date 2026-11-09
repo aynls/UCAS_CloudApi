@@ -4,8 +4,8 @@ import { graphqlRequest } from '@/gql/graphql';
 import { pageInfoSchema } from '@/gql/pagination';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { useErrorHandler } from '@/hooks/use-error-handler';
 import { useAuthStore } from '@/stores/authStore';
+import { useErrorHandler } from '@/hooks/use-error-handler';
 import {
   Channel,
   ChannelConnection,
@@ -95,6 +95,7 @@ const CREATE_CHANNEL_MUTATION = `
       tags
       defaultTestModel
       settings {
+          usageAccess { mode userIDs }
         extraModelPrefix
         modelMappings {
           from
@@ -170,6 +171,7 @@ const DUPLICATE_CHANNEL_MUTATION = `
       tags
       defaultTestModel
       settings {
+          usageAccess { mode userIDs }
         extraModelPrefix
         modelMappings {
           from
@@ -245,6 +247,7 @@ const BULK_CREATE_CHANNELS_MUTATION = `
       tags
       defaultTestModel
       settings {
+          usageAccess { mode userIDs }
         extraModelPrefix
         modelMappings {
           from
@@ -320,6 +323,7 @@ const UPDATE_CHANNEL_MUTATION = `
       tags
       defaultTestModel
       settings {
+          usageAccess { mode userIDs }
         extraModelPrefix
         modelMappings {
           from
@@ -516,6 +520,7 @@ const BULK_IMPORT_CHANNELS_MUTATION = `
           transport
         }
         settings {
+          usageAccess { mode userIDs }
           extraModelPrefix
           modelMappings {
             from
@@ -714,6 +719,7 @@ const BULK_UPDATE_CHANNEL_ORDERING_MUTATION = `
           transport
         }
         settings {
+          usageAccess { mode userIDs }
           extraModelPrefix
           modelMappings {
             from
@@ -838,6 +844,7 @@ const QUERY_CHANNELS_QUERY = `
           tags
           defaultTestModel
           settings {
+          usageAccess { mode userIDs }
             extraModelPrefix
             modelMappings {
               from
@@ -1192,6 +1199,8 @@ export function useUpdateChannel() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['channels'] });
       queryClient.invalidateQueries({ queryKey: ['channel', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['campusResources'] });
+      queryClient.invalidateQueries({ queryKey: ['models'] });
       toast.success(t('channels.messages.updateSuccess'));
     },
     onError: (error) => {

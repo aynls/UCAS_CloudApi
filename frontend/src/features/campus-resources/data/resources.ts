@@ -64,6 +64,8 @@ const campusChannelHealthSchema = z.object({
 });
 
 const campusResourceChannelSchema = z.object({
+  usageAccessMode: z.enum(['all', 'selected']).optional().default('all'),
+  canUse: z.boolean().optional().default(true),
   id: z.string().optional(),
   name: z.string(),
   provider: z.string(),

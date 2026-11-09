@@ -209,5 +209,6 @@
   "resources.activity.testPassed": "This route passed",
   "resources.activity.testFailed": "This route failed",
   "resources.activity.legend": "24h successful calls · Green: success observed · Gray: no record · About these metrics",
-  "resources.activity.myKeys": "My API keys"
+  "resources.activity.myKeys": "My API keys",
+  "resources.channels.restricted": "Available to selected users"
 }

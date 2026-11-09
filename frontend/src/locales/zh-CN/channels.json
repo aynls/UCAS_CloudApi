@@ -753,5 +753,18 @@
   "channels.endpoints.invalidApiFormat": "不支持的 API 格式",
   "channels.endpoints.baseURL": "基础 URL",
   "channels.endpoints.baseURLPlaceholder": "可选的基础 URL 覆盖 (例如 https://api.deepseek.com/v1)",
-  "channels.endpoints.invalidBaseURL": "无效的基础 URL 格式"
+  "channels.endpoints.invalidBaseURL": "无效的基础 URL 格式",
+  "channels.usageAccess.label": "使用范围",
+  "channels.usageAccess.all": "所有用户",
+  "channels.usageAccess.selected": "指定用户",
+  "channels.usageAccess.self": "仅自己",
+  "channels.usageAccess.me": "我",
+  "channels.usageAccess.description": "设置谁可以调用此渠道；仍受现有项目和 API Key 权限限制。",
+  "channels.usageAccess.search": "搜索昵称或用户编号",
+  "channels.usageAccess.remove": "移除 {{user}}",
+  "channels.usageAccess.loading": "正在加载用户…",
+  "channels.usageAccess.retry": "加载失败，点击重试",
+  "channels.usageAccess.empty": "没有找到匹配用户",
+  "channels.usageAccess.more": "加载更多",
+  "channels.usageAccess.required": "请至少选择一位用户；空名单不会使渠道公开。"
 }

@@ -753,5 +753,18 @@
   "channels.endpoints.invalidApiFormat": "Unsupported API format",
   "channels.endpoints.baseURL": "Base URL",
   "channels.endpoints.baseURLPlaceholder": "Optional base URL override (e.g. https://api.deepseek.com/v1)",
-  "channels.endpoints.invalidBaseURL": "Invalid base URL format"
+  "channels.endpoints.invalidBaseURL": "Invalid base URL format",
+  "channels.usageAccess.label": "Usage access",
+  "channels.usageAccess.all": "All users",
+  "channels.usageAccess.selected": "Selected users",
+  "channels.usageAccess.self": "Only me",
+  "channels.usageAccess.me": "me",
+  "channels.usageAccess.description": "Controls who can use this channel. Project and API key permissions still apply.",
+  "channels.usageAccess.search": "Search public name or user number",
+  "channels.usageAccess.remove": "Remove {{user}}",
+  "channels.usageAccess.loading": "Loading users…",
+  "channels.usageAccess.retry": "Could not load users. Retry",
+  "channels.usageAccess.empty": "No matching users",
+  "channels.usageAccess.more": "Load more",
+  "channels.usageAccess.required": "Select at least one user. An empty list does not make the channel public."
 }
